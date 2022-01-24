@@ -2,6 +2,7 @@ from app import app_flask, render_template, flash, redirect, url_for, request, s
 from werkzeug.security import generate_password_hash
 from flask_login import current_user, login_user, logout_user, login_required
 from werkzeug.urls import url_parse
+from wtforms import SubmitField
 
 from app.forms import LoginForm, RegistrationForm, PostForm, UpdatePostForm
 from app.models import User, Post
@@ -16,7 +17,7 @@ def index():
         post = Post(body=form.text.data, user_id=current_user.id)
         db.session.add(post)
         db.session.commit()
-        redirect(url_for('index'))
+        return redirect(url_for('index'))
     posts = Post.query.order_by(Post.timestamp.desc())
     return render_template("index.html", title='Home Page', posts=posts, form=form)
 
@@ -29,10 +30,7 @@ def login():
     if form.validate_on_submit():
         user = User.query.filter_by(username=form.username.data).first()
         login_user(user, remember=form.remember_me.data)
-        next_page = request.args.get('next')
-        if not next_page or url_parse(next_page).netloc != '':
-            next_page = url_for('index')
-        return redirect(next_page)
+        return redirect(url_for('index'))
     return render_template('login.html', title='Sign In', form=form)
 
 
@@ -60,8 +58,8 @@ def register():
 @app_flask.route('/index/posts/<post_id>', methods=['GET', 'POST'])
 def update_post(post_id):
     post = Post.query.filter_by(id=post_id).first()
-    form = UpdatePostForm(post_body=post.body)
-    if current_user.is_authenticated:
+    form = UpdatePostForm()
+    if current_user.is_authenticated and post:
         if form.validate_on_submit():
             if form.delete.data:
                 db.session.delete(post)
@@ -73,7 +71,6 @@ def update_post(post_id):
             form.text.data = post.body
 
         if post and post.user_id == current_user.id:
-            print('page rendered')
             return render_template('update_post.html', title='Update post',
                                    form=form, post=post)
         else:
