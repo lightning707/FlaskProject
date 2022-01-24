@@ -77,7 +77,7 @@ def update_post(post_id):
             return render_template('update_post.html', title='Update post',
                                    form=form, post=post)
         else:
-            redirect(url_for('index'))
+            return redirect(url_for('index'))
     else:
-        redirect(url_for('login'))
+        return redirect(url_for('login'))
 
